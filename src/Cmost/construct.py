@@ -9,6 +9,10 @@ from .processing import (
     ,remove_redshift
 )
 
+__all__ = [
+    "FitsData"
+]
+
 class FitsData:
     def __init__(self
                  ,header: pd.Series
@@ -34,6 +38,7 @@ class FitsData:
                                        ,aligned_wavelength)
         return FitsData(self.__header
                       ,spectrum_data)
+    
     def __repr__(self):
         return f"FitsData(filename={self.file_name},obsid={self.obsid},data_v=LAMOST DR{self.dr_number})"
 
@@ -78,7 +83,11 @@ class FitsData:
     def __plot(data,ax:plt.axes = None
              ,is_show:bool = True):
         rc_s = {
-            "font.size": 14
+            "font.family":"Arial"
+            ,"font.size": 14
+            ,"xtick.labelsize":14
+            ,"ytick.labelsize":14
+            ,"mathtext.fontset": "cm"
             }
         
         with sns.axes_style("ticks",rc=rc_s):
@@ -88,6 +97,8 @@ class FitsData:
                 sns.lineplot(data=data,x='Wavelength',y='Flux')
 
         if is_show:
+            plt.xlabel("Wavelength($\AA$)")
+            plt.ylabel("Flux")
             plt.show()
         
     def plot(self,ax:plt.axes = None

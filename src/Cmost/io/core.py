@@ -6,7 +6,7 @@ from concurrent.futures import (
     ProcessPoolExecutor
     ,as_completed
 )
-from .stratgy import (
+from .strategy import (
     return_spectrum_le8
     ,return_spectrum_ge8
     ,return_header_info

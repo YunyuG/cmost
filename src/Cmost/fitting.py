@@ -1,8 +1,11 @@
 import numpy as np
 import pandas as pd
 from scipy.ndimage import median_filter
+from .construct import FitsData
 
-
+__all__ = [
+    "fit_by_window"
+]
 
 
 def Heaviside_Function(s):
@@ -43,7 +46,7 @@ def compute_S(origin_flux, filter_flux):
 def catch_one_window(spectrum_data: pd.DataFrame
                     , window_start_point: int
                     , window_end_point: int
-                    , kernel_size:int = 7):
+                    , kernel_size:int):
     """
     :param fw: flux和wavelength
     :param window_start_point: 窗口起始点
@@ -76,7 +79,8 @@ def catch_one_window(spectrum_data: pd.DataFrame
 
 
 def select_point(spectrum_data: pd.DataFrame
-                 ,window_length:int = 100):
+                 ,window_length:int
+                 ,kernel_size:int ):
     """
     筛选每个窗口符合条件的点并汇总到一个命名为windows的dataframe中
     :param fw:flux和wavelength
@@ -90,22 +94,31 @@ def select_point(spectrum_data: pd.DataFrame
     for i in np.arange(wavelength_start_point + window_length
             , wavelength_end_point + window_length
             , window_length):
-        window = catch_one_window(spectrum_data, i - window_length, i)
+        window = catch_one_window(spectrum_data
+                                  , i - window_length
+                                  , i
+                                  ,kernel_size=kernel_size)
         windows = pd.concat([windows, window], axis=0)
     windows.sort_values(by="Wavelength", inplace=True)
     windows.reset_index(drop=True, inplace=True)
     return windows
 
 
-def fit_by_window(spectrum_data:pd.DataFrame
-                  ,include_coef:bool=False
+def fit_by_window(spectrum_data:pd.DataFrame | FitsData
+                  ,window_length:int=100
+                  ,kernel_size:int=5
                   ,iterate_nums:int=10):
     """
     五阶多项式拟合
     :param windows:
     :return:
     """
-    windows = select_point(spectrum_data)
+    if isinstance(spectrum_data, FitsData):
+        spectrum_data = spectrum_data.spectrum_data
+
+    windows = select_point(spectrum_data
+                           ,window_length=window_length
+                           ,kernel_size=kernel_size)
     fw_set = windows.copy()
     # print(fw_set)
     fw_set["removed"] = [False] * len(fw_set)
@@ -126,10 +139,9 @@ def fit_by_window(spectrum_data:pd.DataFrame
         else:
             for r in removed_point:
                 fw_set.loc[fw_set["Wavelength"] == r, "removed"] = True
-    fw_fit = pd.DataFrame(data={
-        "Wavelength": ws,
-        "Flux": fc
-    })
+    
     coef = v
-    return fw_fit, coef
- 
+    return pd.DataFrame(data={
+        "Wavelength":spectrum_data['Wavelength'].values
+        ,"Flux": np.polyval(coef, spectrum_data["Wavelength"])
+    })
