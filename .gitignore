@@ -7,13 +7,14 @@
 */__pycache__/*
 /fits
 /.idea
-/src/AstroProcessing.egg-info
-/src/build
-/src/dist
+/.vscode
 
 /tests
 /data
 /scripts
 /star_catelog
 /.pytest_cache
-Cmost.egg-info
+/Cmost.egg-info
+/dist
+/build
+src/Cmost.egg-info
