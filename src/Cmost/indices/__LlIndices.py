@@ -2,7 +2,7 @@ __all__ = ["get_index_table","compute_LlIndices"]
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from .construct import FitsData
+from ..__construct import FitsData
 from scipy import integrate,interpolate
 from pathlib import Path
 from functools import cache
@@ -10,7 +10,7 @@ from functools import cache
 
 @cache
 def get_index_table()->pd.DataFrame:
-    index_path = Path(__file__).parent / Path("static") / "index.table"
+    index_path = Path(__file__).parent.parent / Path("assets") / "index.table"
     index_table = pd.read_csv(index_path,skiprows=1,sep=" ",header=None)
     index_table.dropna(inplace=True,axis=1,how='any')
     col_name = ['No.','index_band_start'
@@ -26,20 +26,13 @@ def get_index_table()->pd.DataFrame:
     return index_table
 
 
-
-
-def __extract_one_spectrum(spectrum_data: pd.DataFrame
+def extract_one_spectrum(spectrum_data: pd.DataFrame
                         , Wavelength_start: float, Wavelength_end: float)->pd.DataFrame:
-    """
-    截取一段光谱
-    :param spectrum_data: 光谱数据
-    :param Wavelength_start: 起始波长
-    :param Wavelength_end:  结束波长
-    :return:spectrum_data_intercept: 处理好的波长
-    """
+    
+    
     func = interpolate.interp1d(spectrum_data["Wavelength"]
                                 , spectrum_data["Flux"], kind="linear")
-    # 对原光谱数据进行插值
+    
     spectrum_data_intercept:pd.DataFrame = spectrum_data[
         (spectrum_data["Wavelength"] > Wavelength_start)
         & (spectrum_data["Wavelength"] < Wavelength_end)
@@ -62,13 +55,62 @@ def __extract_one_spectrum(spectrum_data: pd.DataFrame
     
 
     
-def compute_LlIndices(data:pd.DataFrame | FitsData
-                      ,index_table:pd.DataFrame = get_index_table()):
+def compute_LlIndices(
+    fits_or_spectrum_data:pd.DataFrame | FitsData
+    ,index_table:pd.DataFrame = None
+)->pd.DataFrame:
+    """compute the LlIndices of the spectrum data.
+
+    :param fits_or_spectrum_data: Input spectral data. Must be either:
+        - A two-column pandas DataFrame with columns named `Flux` and `Wavelength`.
+        - An instance of the package's default FitsData structure.
+    :param index_table: A table contains band parameters in spectral analysis.
+    This library comes with such an index table,
+    which you can retrieve using `get_index_table`.
+    It is sourced from https://astro.vaporia.com/start/lickindices.html
+
+    :return: A pandas Series containing the computed LlIndices.
+
+    **Examples:**
+    1. Calculate Lick line Indices using the built-in index table:
+    >>> import Cmost as cst
+    >>> fits_path = "spec-60591-LN042429N340750BM01_sp01-001.fits.gz"
+    >>> fits_data = cst.read_fits(fits_path,ignore_mask_1=True)
+    >>> indices = cst.indices.compute_LlIndices(fits_data)
+    >>> print(indices)
+    CN_1       -0.029162
+    CN_2       -0.002139
+    Ca4227      1.482712
+    G4300       6.125893
+    Fe4383      5.898983
+    Ca4455      1.643089
+            ...
+    Hdelta_A   -2.370209
+    Hgamma_A   -5.547030
+    Hdelta_F    0.305394
+    Hgamma_F   -1.174197
+    dtype: float64
     
-    if isinstance(data,FitsData):
-        spectrum_data = data.spectrum_data
+    2. Calculate Lick line Indices using a custom index table:
+    >>> custom_index_table = cst.indices.read_csv("****.csv") # you must keep the same format as the index table in the library
+    >>> custom_index_table.columns = ['index_band_start'
+    ...         ,'index_band_end'
+    ...         ,'blue_continuum_start'
+    ...         ,'blue_continuum_end'
+    ...         ,'red_continuum_start'
+    ...         ,'red_continuum_end'
+    ...         ,'Units'
+    ...         ,'name']
+    >>> indices = cst.indices.compute_LlIndices(fits_data, index_table = custom_index_table)
+    >>> print(indices)
+    """
+    if isinstance(fits_or_spectrum_data,FitsData):
+        spectrum_data = fits_or_spectrum_data.spectrum_data
     else:
-        spectrum_data = data
+        spectrum_data = fits_or_spectrum_data
+        
+    if index_table is None:
+        index_table = get_index_table()
 
     result: pd.Series = pd.Series()
     for i in range(len(index_table)):
@@ -97,31 +139,31 @@ No.
             raise ValueError(error_info) from e
             
 
-        FI_lambda, FC_lambda = __compute_FI_lambda_FC_lambda(spectrum_data, index_band_start
+        FI_lambda, FC_lambda = compute_FI_lambda_FC_lambda(spectrum_data, index_band_start
                                                         , index_band_end, blue_continuum_start
                                                         , blue_continuum_end, red_continuum_start
                                                         , red_continuum_end)
         if Units == 0:
-            result[name] = __compute_EW(FI_lambda, FC_lambda)
+            result[name] = compute_EW(FI_lambda, FC_lambda)
         else:
-            result[name] = __compute_Mag(FI_lambda, FC_lambda)
+            result[name] = compute_Mag(FI_lambda, FC_lambda)
     return result
 
 
-def __compute_FI_lambda_FC_lambda(spectrum_data: pd.DataFrame
+def compute_FI_lambda_FC_lambda(spectrum_data: pd.DataFrame
                             , index_band_start: float
                             , index_band_end: float
                             , blue_continuum_start: float
                             , blue_continuum_end: float
                             , red_continuum_start: float
                             , red_continuum_end: float):
-    FI_lambda: pd.DataFrame = __extract_one_spectrum(spectrum_data, index_band_start, index_band_end)
+    FI_lambda: pd.DataFrame = extract_one_spectrum(spectrum_data, index_band_start, index_band_end)
 
-    blue_continuum = __extract_one_spectrum(spectrum_data, blue_continuum_start, blue_continuum_end)
-    red_continuum = __extract_one_spectrum(spectrum_data, red_continuum_start, red_continuum_end)
+    blue_continuum = extract_one_spectrum(spectrum_data, blue_continuum_start, blue_continuum_end)
+    red_continuum = extract_one_spectrum(spectrum_data, red_continuum_start, red_continuum_end)
 
-    blue_continuum_avg = __compute_MeanFlux(blue_continuum)
-    red_continuum_avg = __compute_MeanFlux(red_continuum)
+    blue_continuum_avg = compute_MeanFlux(blue_continuum)
+    red_continuum_avg = compute_MeanFlux(red_continuum)
 
     blue_Wavelength_mid = (blue_continuum_start + blue_continuum_end) / 2.0
     red_Wavelength_mid = (red_continuum_start + red_continuum_end) / 2.0
@@ -138,18 +180,18 @@ def __compute_FI_lambda_FC_lambda(spectrum_data: pd.DataFrame
     return FI_lambda, FC_lambda
 
 
-def __compute_MeanFlux(spectrum_data: pd.DataFrame):
+def compute_MeanFlux(spectrum_data: pd.DataFrame):
     lambda_1 = spectrum_data["Wavelength"].min()
     lambda_2 = spectrum_data["Wavelength"].max()
     AvgFlux = integrate.trapezoid(spectrum_data["Flux"], spectrum_data["Wavelength"]) / (lambda_2 - lambda_1)
     return AvgFlux
 
 
-def __compute_EW(FI_lambda, FC_lambda):
+def compute_EW(FI_lambda, FC_lambda):
     return integrate.trapezoid(1 - (FI_lambda["Flux"] / FC_lambda["Flux"]), FI_lambda["Wavelength"])
 
 
-def __compute_Mag(FI_lambda, FC_lambda):
+def compute_Mag(FI_lambda, FC_lambda):
     lambda_1 = FI_lambda["Wavelength"].min()
     lambda_2 = FI_lambda["Wavelength"].max()
     return -2.5 * np.log10(integrate.trapezoid(FI_lambda["Flux"] / FC_lambda["Flux"], FI_lambda["Wavelength"]) / (lambda_2 - lambda_1))

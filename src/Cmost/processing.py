@@ -6,13 +6,6 @@ from .mtypes import array_like
 from .utils import to_ndarray
         
 def minmax_function(spectrum_data:pd.DataFrame)->pd.DataFrame:
-    """
-    归一化光谱数据
-
-    :param spectrum_data: 待处理的光谱数据
-
-    :return: 处理后的光谱数据
-    """
     spectrum_data["Flux"] = (spectrum_data["Flux"] - spectrum_data["Flux"].min()) \
                             /(spectrum_data["Flux"].max() - spectrum_data["Flux"].min())
     return spectrum_data
@@ -21,14 +14,6 @@ def minmax_function(spectrum_data:pd.DataFrame)->pd.DataFrame:
 
 def align_wavelength(spectrum_data:pd.DataFrame
                      ,aligned_wavelength:array_like)->pd.DataFrame:
-    """
-    等距离对齐波长
-
-    :param spectrum_data: 待处理的光谱数据
-    :param normal_wavelength: 对齐后的波长
-
-    :return: 处理后的光谱数据
-    """
 
     aligned_wavelength = to_ndarray(aligned_wavelength)
     
@@ -49,14 +34,6 @@ def align_wavelength(spectrum_data:pd.DataFrame
 
 def remove_redshift(spectrum_data:pd.DataFrame
                     ,Z:float)->pd.DataFrame:
-    """
-    删除红移
-
-    :param spectrum_data: 待处理的光谱数据
-    :param Z: 红移
-
-    :return: 处理后的光谱数据
-    """
     # 删除红移
     # z=(wavelength_obs-wavelength_rest)/wavelength_rest
     

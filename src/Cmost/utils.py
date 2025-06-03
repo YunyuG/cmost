@@ -1,6 +1,8 @@
 import asyncio
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 from functools import wraps
@@ -44,3 +46,25 @@ def asyncio_decorator(func):
         else:
             asyncio.run(func(*args,**kwargs))
     return wrapper
+
+def plot_spectrum(data:pd.DataFrame
+                ,ax:plt.axes = None
+                ,is_show:bool = False):
+    rc_s = {
+        "font.family":"Arial"
+        ,"font.size": 14
+        ,"xtick.labelsize":14
+        ,"ytick.labelsize":14
+        ,"mathtext.fontset": "cm"
+        }
+    
+    with sns.axes_style("ticks",rc=rc_s):
+        if ax:
+            sns.lineplot(data=data,x='Wavelength',y='Flux',ax=ax)
+        else:
+            sns.lineplot(data=data,x='Wavelength',y='Flux')
+
+    if is_show:
+        plt.xlabel(r"Wavelength($\AA$)")
+        plt.ylabel("Flux")
+        plt.show()

@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+from .utils import plot_spectrum
 from .mtypes import array_like
 from .processing import (
     minmax_function
@@ -12,6 +12,14 @@ from .processing import (
 __all__ = [
     "FitsData"
 ]
+
+class RedshiftIsUnusal(Exception):
+    def __init__(self,redshift:float,filename:str,redshift_threshold:float):
+        self.message = (f"The redshift value is {redshift}, exceeding our restricted threshold of {redshift_threshold}."
+                        ,f" We consider this spectrum abnormal and recommend deleting the spectrum in `{filename}`."
+                        ,"If you still wish to proceed with reading, we do **not recommend** using the `del_redshift` method to remove the redshift,"
+                        ," as this will cause anomalies in the final data.")
+        super().__init__(*self.message)
 
 class FitsData:
     def __init__(self
@@ -28,6 +36,11 @@ class FitsData:
                         ,spectrum_data)
     
     def del_redshift(self):
+        # to developer: if you want to change the redshift threshold
+        # please change the value of RED_SHIFT_THRESHOLD
+        RED_SHIFTT_THRESHOLD = 2
+        if abs(self.redshift)>=RED_SHIFTT_THRESHOLD:
+            raise RedshiftIsUnusal(self.redshift,self.file_name,RED_SHIFTT_THRESHOLD)
         spectrum_data = remove_redshift(self.__data.copy()
                                        ,self.redshift)
         return FitsData(self.__header
@@ -78,29 +91,9 @@ class FitsData:
             return int(match.group(1))
         else:
             raise ValueError("DR number not found in DATA_V")
+    
         
-    @staticmethod
-    def __plot(data,ax:plt.axes = None
-             ,is_show:bool = True):
-        rc_s = {
-            "font.family":"Arial"
-            ,"font.size": 14
-            ,"xtick.labelsize":14
-            ,"ytick.labelsize":14
-            ,"mathtext.fontset": "cm"
-            }
-        
-        with sns.axes_style("ticks",rc=rc_s):
-            if ax:
-                sns.lineplot(data=data,x='Wavelength',y='Flux',ax=ax)
-            else:
-                sns.lineplot(data=data,x='Wavelength',y='Flux')
-
-        if is_show:
-            plt.xlabel("Wavelength($\AA$)")
-            plt.ylabel("Flux")
-            plt.show()
-        
-    def plot(self,ax:plt.axes = None
-             ,is_show:bool = True):
-        self.__plot(self.__data,ax,is_show)
+    def visualize(self
+                  ,ax:plt.axes = None
+                  ,is_show:bool = False):
+        plot_spectrum(self.__data,ax=ax,is_show=is_show)

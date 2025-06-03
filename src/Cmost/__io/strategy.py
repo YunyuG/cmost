@@ -5,11 +5,7 @@ class BadPointExistsError(Exception):
     ...
 
 def return_spectrum_le8(hdu,ignore_mask_1:bool)->pd.DataFrame:
-    """
-    返回光谱数据
-    :param fp: fits文件路径
-    :return: 光谱数据
-    """
+    
         
     col_name = ['Flux', 'Inverse', 'Wavelength', 'Andmask', 'Ormask']
 
@@ -25,11 +21,7 @@ def return_spectrum_le8(hdu,ignore_mask_1:bool)->pd.DataFrame:
 
 
 def return_spectrum_ge8(hdu,ignore_mask_1:bool)->pd.DataFrame:
-    """
-    返回光谱数据和红移
-    :param fp: fits文件路径
-    :return: 光谱数据和红移
-    """
+    
 
     col_name = ['Flux', 'Inverse', 'Wavelength', 'Andmask', 'Ormask',"Normalization"]
     
@@ -47,20 +39,13 @@ def return_spectrum_ge8(hdu,ignore_mask_1:bool)->pd.DataFrame:
 
 
 def return_header_info(hdu)->str | float:
-    """
-    返回fits文件的header
-    """
+    
     return hdu[0].header
 
 
 def mask_is_one(Ormask:array_like
                     ,Andmask:array_like)->bool:
-    """
-    判断Ormask和Andmask是否存在1
-    :param Ormask: Ormask
-    :param Andmask: Andmask
-    :return: bool
-    """
+    
     if Ormask.sum()>0 or Andmask.sum()>0:
         return True
     else:
