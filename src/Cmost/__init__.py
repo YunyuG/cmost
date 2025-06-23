@@ -1,10 +1,7 @@
-from .__io import *
 from .__download import *
-from . import indices
-from . import fitting
-from .__construct import *
+from .__io import *
+from . import lick
 
+__all__ =  __io.__all__ + __download.__all__
 
-__all__ = __io.__all__ + __download.__all__
-
-__version__ = '0.0.1'
+__version__ = '0.0.2'

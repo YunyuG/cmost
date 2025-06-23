@@ -1,27 +1,29 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "Cmost"
-version = "0.1"
+version = "0.2"
 authors = [
-    {name = "Yunyu Guo",email="guoyunyu2017@outlook.com"}]
+    {name = "Yunyu Guo",email="guoyunyu2017@outlook.com"}
+    ,{name = "Peng Tang",email="1941275544@qq.com"}]
 description = "A processing tool for FITS files related to LAMOST"
 license = "GPL-3.0-or-later"
 license-files = ["LICENCE"]
 readme = "readme.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
+
 dependencies = [
-    "numpy"
-    ,"pandas"
-    ,"matplotlib"
-    ,"astropy"
-    ,"scipy>=1.14.0"
-    ,"seaborn"
-    ,"aiohttp"
-    ,"aiofiles"
+  "numpy>=1.23"
+  ,"seaborn>=0.13"
+  ,"scipy>=1.8"
+  ,"astropy>=6.0"
+  ,"aiohttp<=3.8.3; python_version >= '3.9' and python_version < '3.10'"
+  ,"aiohttp>3.8.3; python_version>='3.10'"
+  ,"aiofiles"
 ]
+
 classifiers = [
   # How mature is this project? Common values are
   #   3 - Alpha
@@ -35,11 +37,11 @@ classifiers = [
 
   # Specify the Python versions you support here.
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Operating System :: POSIX :: Linux",
   "Operating System :: Microsoft :: Windows"
-
 ]
