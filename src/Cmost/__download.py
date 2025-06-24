@@ -76,15 +76,16 @@ async def download_single_fits(
 
 def asyncio_decorator(func):
     @wraps(func)
-    def wrapper(*args,**kwargs):
+    def wrapper(*args, **kwargs):
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = None
         if loop and loop.is_running():
-            loop.create_task(func(*args,**kwargs))
+            return asyncio.create_task(func(*args, **kwargs))
         else:
-            asyncio.run(func(*args,**kwargs))
+    # 每次调用时创建新的事件循环
+            return asyncio.run(func(*args, **kwargs))
     return wrapper
 
 @asyncio_decorator

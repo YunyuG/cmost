@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from functools import cache
 
 from scipy import interpolate,integrate
-from .__fits_data import FitsData,Spectrum
+from .__fits_data import FitsData
 
 __all__ = ["read_LickLineIndex","compute_LickLineIndices"]
 
@@ -26,6 +26,15 @@ class LickLineIndex:
     units:int
     index_name:str
 
+class Spectrum:
+    wavelength:numpy.ndarray
+    flux:numpy.ndarray
+
+    def __init__(self,wavelength:numpy.ndarray
+                 ,flux:numpy.ndarray)->None:
+        self.wavelength = wavelength
+        self.flux = flux
+
 
 @cache
 def read_LickLineIndex(fp:str)->list[LickLineIndex]:
@@ -37,7 +46,7 @@ def read_LickLineIndex(fp:str)->list[LickLineIndex]:
                 if "#" in line:
                     continue
                 else:
-                    f = re.findall(pattern,line)[1:]
+                    f = re.findall(pattern,line)[1:] # ignore the index
                     l = LickLineIndex(
                         index_band_start=float(f[0]),
                         index_band_end=float(f[1]),
@@ -80,7 +89,8 @@ def compute_LickLineIndices(fits_data:FitsData = None
         LickLineIndex_table = read_LickLineIndex(str(Path(__file__).parent / "assets" / "index.table"))
     
     if fits_data is not None:
-        spectrum_data = fits_data.spectrum
+        spectrum_data = Spectrum(fits_data.wavelength
+                               ,fits_data.flux)
     else:
         spectrum_data = Spectrum(wavelength,flux)
 
