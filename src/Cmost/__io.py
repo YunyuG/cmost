@@ -18,7 +18,7 @@ class DataUnusalWarning(Warning):
     ...
 
 def read_fits(
-        fp:str
+        fits_path:str
         ,*
         ,ignore_mask_1:bool = False
         ,ignore_unusual_z:bool = False
@@ -29,14 +29,9 @@ def read_fits(
     :param ignore_mask_1: Whether to ignore bad pixels, defaults to False
     :param ignore_unusual_z: Whether to ignore unusual redshift values, defaults to False
     :return: A FitsData object containing wavelength, flux, and header information
-
-    **Example**:
-    ------------
-    1. Read a FITS file and visualize the spectrum:
-    
     """
         
-    with fits.open(fp) as hdu:
+    with fits.open(fits_path) as hdu:
         header = hdu[0].header
         DATA_V = header["DATA_V"]
         match = re.search(r'DR(\d{1,2})', DATA_V)
@@ -63,7 +58,10 @@ def read_fits(
 
         return FitsData(wavelength,flux,hdu[0].header)
 
-def read_header(fp:str)->dict:
-    with fits.open(fp) as hdu:
+def read_header(fits_path:str,key:str = None)->dict | str:
+    with fits.open(fits_path) as hdu:
         header = hdu[0].header
-    return header
+    if key is None:
+        return header
+    else:
+        return header[key]

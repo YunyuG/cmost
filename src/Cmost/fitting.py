@@ -16,6 +16,8 @@ from .__fits_data import FitsData
 #     return wrapper
 
 # @Heaviside_function_padding
+
+# FIXME: This function is not matched the article
 def Heaviside_function(s,c):
     return 0.5  * (1 + (2.0 / numpy.pi) * numpy.arctan(s / c))
 
@@ -47,6 +49,21 @@ def sw_fit(fits_data:FitsData = None
             ,c:int = 5
             ,max_iterate_nums:int = 10
             ,)->tuple[numpy.ndarray,numpy.ndarray]:
+    """Continuum spectrum fitting based on statistical windows
+
+    :param fits_data:You can pass a FitsData object,which can be obtained by the `read_fits` function. You can also explicitly pass in `wavelength` and `flux` directly.
+
+    :param wavelength: _description_, defaults to None
+    :param flux: _description_, defaults to None
+    :param window_num: _description_, defaults to 10
+    :param mean_filter_size: _description_, defaults to 5
+    :param c: _description_, defaults to 5
+    :param max_iterate_nums: _description_, defaults to 10
+    :raises ValueError: _description_
+    :raises ValueError: _description_
+    :raises ValueError: _description_
+    :return: _description_
+    """
     
     if (wavelength is None or flux is None) and fits_data is None:
         raise ValueError("must provide either `wavelength` and `flux` or `fits_data`")
