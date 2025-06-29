@@ -1,20 +1,32 @@
-*.fits.gz
-*.fits
-*.jepg
-*.pyc
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
 
-/.astroprocessing
-*/__pycache__/*
-/fits
-/.idea
-/.vscode
+# C extensions
+*.so
 
-/tests
-/data
-/scripts
-/star_catelog
-/.pytest_cache
-/Cmost.egg-info
-/dist
-/build
-src/Cmost.egg-info
+# Unit test / coverage reports
+htmlcov/
+.pytest_cache/
+# Sphinx documentation
+docs/_build/
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# PyCharm
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# build
+*.egg-info/
+
+/tests/cache
+/scripts/

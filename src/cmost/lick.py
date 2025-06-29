@@ -26,15 +26,6 @@ class LickLineIndex:
     units:int
     index_name:str
 
-class Spectrum:
-    wavelength:numpy.ndarray
-    flux:numpy.ndarray
-
-    def __init__(self,wavelength:numpy.ndarray
-                 ,flux:numpy.ndarray)->None:
-        self.wavelength = wavelength
-        self.flux = flux
-
 
 @cache
 def read_LickLineIndex(fp:str)->list[LickLineIndex]:
@@ -86,89 +77,100 @@ def compute_LickLineIndices(fits_data:FitsData = None
         raise ValueError("must provide either `wavelength` and `flux` or `fits_data`")
     
     if LickLineIndex_table is None:
-        LickLineIndex_table = read_LickLineIndex(str(Path(__file__).parent / "assets" / "index.table"))
+        LickLineIndex_table = read_LickLineIndex(str(Path(__file__).parent / Path("assets") / Path("index.table")))
     
     if fits_data is not None:
-        spectrum_data = Spectrum(fits_data.wavelength
-                               ,fits_data.flux)
+        wavelength = numpy.asarray(fits_data.wavelength)
+        flux = numpy.asarray(fits_data.flux)
     else:
-        spectrum_data = Spectrum(wavelength,flux)
+        wavelength = numpy.asarray(wavelength)
+        flux = numpy.asarray(flux)
 
     res = dict()
     for lick_line_index in LickLineIndex_table:
 
-        FI_lambda,FC_lambda = compute_FI_lambda_FC_lambda(spectrum_data
+        (wavelength_FI_lambda
+        ,flux_FI_lambda
+        ,wavelength_FC_lambda
+        ,flux_FC_lambda) = compute_FI_lambda_FC_lambda(wavelength,flux
                                                        ,lick_line_index)
         if lick_line_index.units == 0:
-            res[lick_line_index.index_name] = compute_EW(FI_lambda,FC_lambda)
+            res[lick_line_index.index_name] = compute_EW(wavelength_FI_lambda,flux_FI_lambda,wavelength_FC_lambda,flux_FC_lambda)
         else:
-            res[lick_line_index.index_name] = compute_Mag(FI_lambda,FC_lambda)
+            res[lick_line_index.index_name] = compute_Mag(wavelength_FI_lambda,flux_FI_lambda,wavelength_FC_lambda,flux_FC_lambda)
     return res
             
             
 
 def compute_FI_lambda_FC_lambda(
-        spectrum_data:Spectrum
+        wavelength:numpy.ndarray
+        ,flux:numpy.ndarray
         , lick_line_index: LickLineIndex
 ):
-    func = interpolate.interp1d(spectrum_data.wavelength
-                                   ,spectrum_data.flux,kind="linear")
+    func = interpolate.interp1d(wavelength
+                                   ,flux,kind="linear")
     
-    FI_lambda = extract_one_spectrum(spectrum_data
+    wavelength_FI_lambda,flux_FI_lambda = extract_one_spectrum(wavelength
+                                     ,flux
                                     ,lick_line_index.index_band_start,
                                     lick_line_index.index_band_end
                                     ,func=func)
 
-    blue_continuum = extract_one_spectrum(spectrum_data
+    wavelength_blue_continuum,flux_blue_continuum = extract_one_spectrum(wavelength
+                                          ,flux
                                         ,lick_line_index.blue_continuum_start
                                         ,lick_line_index.blue_continuum_end
                                         ,func=func)
     
-    red_continuum = extract_one_spectrum(spectrum_data,
-                                        lick_line_index.red_continuum_start
+    wavelength_red_continuum,flux_red_continuum = extract_one_spectrum(wavelength
+                                         ,flux
+                                        ,lick_line_index.red_continuum_start
                                         ,lick_line_index.red_continuum_end
                                         ,func=func)
     
     blue_wavelength_mid = (lick_line_index.blue_continuum_start + lick_line_index.blue_continuum_end) / 2
     red_wavelength_mid = (lick_line_index.red_continuum_start + lick_line_index.red_continuum_end) / 2
 
-    blue_mean_flux = compute_mean_flux(blue_continuum)
-    red_mean_flux = compute_mean_flux(red_continuum)
+    blue_mean_flux = compute_mean_flux(wavelength_blue_continuum,flux_blue_continuum)
+    red_mean_flux = compute_mean_flux(wavelength_red_continuum,flux_red_continuum)
 
     F = interpolate.interp1d(y=[blue_mean_flux,red_mean_flux]
                             ,x=[blue_wavelength_mid,red_wavelength_mid]
                             ,kind="linear")
-    FC_lambda = Spectrum(FI_lambda.wavelength
-                         ,F(FI_lambda.wavelength))
+    # FC_lambda = Spectrum(FI_lambda.wavelength
+    #                      ,F(FI_lambda.wavelength))
+    wavelength_FC_lambda = wavelength_FI_lambda.copy()
+    flux_FC_lambda = F(wavelength_FC_lambda)
 
-    return FI_lambda,FC_lambda
+    return wavelength_FI_lambda,flux_FI_lambda,wavelength_FC_lambda,flux_FC_lambda
 
 
 
 def compute_mean_flux(
-    spectrum_data:Spectrum
+    wavelength:numpy.ndarray
+    ,flux:numpy.ndarray
 )->tuple[float]:
-    lambda_1 = numpy.min(spectrum_data.wavelength)
-    lambda_2 = numpy.max(spectrum_data.wavelength)
-    mean_flux = integrate.trapezoid(spectrum_data.flux,spectrum_data.wavelength / (lambda_2 - lambda_1))
+    lambda_1 = numpy.min(wavelength)
+    lambda_2 = numpy.max(wavelength)
+    mean_flux = integrate.trapezoid(flux,wavelength / (lambda_2 - lambda_1))
     return mean_flux
 
     
 
-def extract_one_spectrum(spectrum_data:Spectrum
+def extract_one_spectrum(wavelength:numpy.ndarray
+                         ,flux:numpy.ndarray
                         ,index_band_start:float
                         ,index_band_end:float
-                        ,func:callable = None)->Spectrum:
-    
+                        ,func:callable = None):
     if func is None:
-        func = interpolate.interp1d(spectrum_data.wavelength
-                                   ,spectrum_data.flux,kind="linear")
+        func = interpolate.interp1d(wavelength
+                                   ,flux,kind="linear")
     
-    index_ = numpy.where((spectrum_data.wavelength > index_band_start) 
-                    & (spectrum_data.wavelength < index_band_end))[0]
+    index_ = numpy.where((wavelength > index_band_start) 
+                    & (wavelength < index_band_end))[0]
     
-    wavelength_intercept = spectrum_data.wavelength[index_].copy()
-    flux_intercept = spectrum_data.flux[index_]
+    wavelength_intercept = wavelength[index_]
+    flux_intercept = flux[index_]
 
     # low effecency
     # wavelength_intercept = np.insert(wavelength_intercept,[0,n]
@@ -183,19 +185,23 @@ def extract_one_spectrum(spectrum_data:Spectrum
     flux_intercept = numpy.concatenate(([func(index_band_start)]
                                         ,flux_intercept
                                        ,[func(index_band_end)]))
-    return Spectrum(wavelength_intercept,flux_intercept)
+    return wavelength_intercept,flux_intercept
     # return wavelength_intercept,flux_intercept
 
-def compute_EW(FI_lambda:Spectrum
-               ,FC_lambda:Spectrum
-               )->float:
-    return integrate.trapezoid(1 - (FI_lambda.flux / FC_lambda.flux), FI_lambda.wavelength)
+def compute_EW(wavelength_FI_lambda
+               ,flux_FI_lambda
+               ,wavelength_FC_lambda
+               ,flux_FC_lambda)->float:
+    
+    return integrate.trapezoid(1 - (flux_FI_lambda / flux_FC_lambda), wavelength_FI_lambda)
 
 
-def compute_Mag(FI_lambda:Spectrum
-               ,FC_lambda:Spectrum
+def compute_Mag(wavelength_FI_lambda
+               ,flux_FI_lambda
+               ,wavelength_FC_lambda
+               ,flux_FC_lambda
                )->float:
     
-    lambda_1 = numpy.min(FI_lambda.wavelength)
-    lambda_2 = numpy.max(FI_lambda.wavelength)
-    return -2.5 * numpy.log10(integrate.trapezoid(FI_lambda.flux/ FC_lambda.flux, FI_lambda.wavelength) / (lambda_2 - lambda_1))
+    lambda_1 = numpy.min(wavelength_FI_lambda)
+    lambda_2 = numpy.max(wavelength_FI_lambda)
+    return -2.5 * numpy.log10(integrate.trapezoid(flux_FI_lambda/ flux_FC_lambda, wavelength_FI_lambda) / (lambda_2 - lambda_1))

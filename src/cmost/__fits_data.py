@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import numpy
-import seaborn
 import matplotlib.pyplot
 
 from .__processing import minmax_function,align_wavelength,remove_redshift
@@ -65,12 +64,17 @@ def plot_spectrum(wavelength:numpy.ndarray
         ,"ytick.labelsize":14
         ,"mathtext.fontset": "cm"
         }
+    matplotlib.pyplot.rcParams.update(rc_s)
+    if ax:
+        ax.plot(wavelength,flux)
+    else:
+        matplotlib.pyplot.plot(wavelength,flux)
     
-    with seaborn.axes_style("ticks",rc=rc_s):
-        if ax:
-            seaborn.lineplot(x=wavelength,y=flux,ax=ax)
-        else:
-            seaborn.lineplot(x=wavelength,y=flux)
+    # with seaborn.axes_style("ticks",rc=rc_s):
+        # if ax:
+        #     seaborn.lineplot(x=wavelength,y=flux,ax=ax)
+        # else:
+        #     seaborn.lineplot(x=wavelength,y=flux)
 
     if is_show:
         matplotlib.pyplot.xlabel(r"Wavelength($\AA$)")

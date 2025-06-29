@@ -3,7 +3,7 @@ requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Cmost"
+name = "cmost"
 version = "0.2"
 authors = [
     {name = "Yunyu Guo",email="guoyunyu2017@outlook.com"}
@@ -16,9 +16,9 @@ requires-python = ">=3.9"
 
 dependencies = [
   "numpy>=1.23"
-  ,"seaborn>=0.13"
   ,"scipy>=1.8"
   ,"astropy>=6.0"
+  ,"matplotlib"
   ,"aiohttp<=3.8.3; python_version >= '3.9' and python_version < '3.10'"
   ,"aiohttp>3.8.3; python_version>='3.10'"
   ,"aiofiles"
