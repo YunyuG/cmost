@@ -6,7 +6,7 @@ from __future__ import annotations
 import numpy
 
 from scipy.ndimage import median_filter
-from .__fits_data import FitsData
+from .io import FitsData
 
 
 class SwFitting5d:
@@ -83,6 +83,7 @@ class SwFitting5d:
         self.coef = F
         return self
     
+    # this will be deprecated in the future
     def fit_transform(self,fits_data:FitsData = None
                     ,*
                     ,wavelength:numpy.ndarray = None
@@ -109,6 +110,7 @@ class SwFitting5d:
 # FIXME: This function is not matched the article
 def Heaviside_function(s,c):
     return 0.5  * (1 + (2.0 / numpy.pi) * numpy.arctan(s / c))
+
 
 def compute_Ulimit(s,c):
     # c=5

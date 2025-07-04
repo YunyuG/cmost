@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from functools import cache
 
 from scipy import interpolate,integrate
-from .__fits_data import FitsData
+from .io import FitsData
 
 __all__ = ["read_LickLineIndex","compute_LickLineIndices"]
 

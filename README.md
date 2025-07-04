@@ -10,6 +10,27 @@ CMOST is a Python toolkit specifically designed for processing FITS files from L
 - 📊 Basic spectral preprocessing methods.
 - 🌐 FTP API for downloading official LAMOST FITS files with asynchronous support.
 
-Additionally, we offer a GUI application built on CMOST, enabling end-to-end spectral preprocessing without writing any code.
+Additionally, we offer a GUI application built on CMOST, enabling end-to-end spectral preprocessing without writing any code,it called `CMOST-GUI`.
 
 We do not guarantee that the calculation results are 100% correct. If you find any defects or issues, please contact us. We would greatly appreciate it.
+
+## Installation
+
+CMOST is available on PyPI and can be installed using pip:
+
+```
+pip3 install cmost
+```
+
+## Usage
+To use CMOST, simply import the `read_fits` function from the `cmost` module and pass the path to the FITS file as an argument:
+
+```python
+import cmost as cst
+
+# Read FITS file
+data = cst.read_fits('path/to/file.fits')
+
+# Access data
+print(data.header)
+```
