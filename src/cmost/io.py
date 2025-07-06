@@ -9,7 +9,7 @@ import re
 import numpy
 
 from astropy.io import fits
-from processing import minmax_function,align_wavelength,remove_redshift
+from .processing import minmax_function,align_wavelength,remove_redshift
 
 class FitsData:
     def __init__(self,wavelength:numpy.ndarray

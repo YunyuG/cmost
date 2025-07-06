@@ -32,5 +32,9 @@ import cmost as cst
 data = cst.read_fits('path/to/file.fits')
 
 # Access data
-print(data.header)
+print(data.header) # FITS header
+print(data.wavelength) # wavelength
+print(data.flux) # flux
+
+data.visualize() # Plot the spectrum
 ```

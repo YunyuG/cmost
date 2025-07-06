@@ -12,24 +12,14 @@ from .io import FitsData
 class SwFitting5d:
 
     def __init__(self
+                ,fits_data:FitsData = None
+                ,*
+                ,wavelength:numpy.ndarray = None
+                ,flux:numpy.ndarray = None
                 ,window_num:int = 10
                 ,mean_filter_size:int = 50
                 ,c:int = 5
                 ,max_iterate_nums:int = 10):
-        
-        self.window_num = window_num
-        self.mean_filter_size = mean_filter_size
-        self.c = c
-        self.max_iterate_nums = max_iterate_nums
-
-        self.wavelength = None
-        self.coef = None
-    
-    
-    def fit(self,fits_data:FitsData = None
-            ,*
-            ,wavelength:numpy.ndarray = None
-            ,flux:numpy.ndarray = None):
         
         if (wavelength is None or flux is None) and fits_data is None:
             raise ValueError("must provide either `wavelength` and `flux` or `fits_data`")
@@ -38,18 +28,26 @@ class SwFitting5d:
             raise ValueError("must provide either `wavelength` and `flux` or `fits_data`")
         
         if fits_data is not None:
-            wavelength = numpy.asarray(fits_data.wavelength)
-            flux = numpy.asarray(fits_data.flux)
+            self.wavelength = numpy.asarray(fits_data.wavelength)
+            self.flux = numpy.asarray(fits_data.flux)
         else:
-            wavelength = numpy.asarray(wavelength)
-            flux = numpy.asarray(flux)
+            self.wavelength = numpy.asarray(wavelength)
+            self.flux = numpy.asarray(flux)
+        
+        self.window_num = window_num
+        self.mean_filter_size = mean_filter_size
+        self.c = c
+        self.max_iterate_nums = max_iterate_nums
+    
+    
+    def band(self):
 
         try:
-            wavelength_set = numpy.reshape(wavelength,(self.window_num,-1))
-            flux_set = numpy.reshape(flux,(self.window_num,-1))
+            wavelength_set = numpy.reshape(self.wavelength,(self.window_num,-1))
+            flux_set = numpy.reshape(self.flux,(self.window_num,-1))
         except Exception as e:
             raise ValueError("the length of `wavelength` or `flux` "
-                            f"{len(wavelength)} div `window_num` {self.window_num} is not Integer") from e
+                            f"{len(self.wavelength)} div `window_num` {self.window_num} is not Integer") from e
         # print(wavelength_set.shape,flux_set.shape)
         
         ws,fs = [],[]
@@ -79,32 +77,30 @@ class SwFitting5d:
 
             if index.shape[0] == 0:
                 break
-        self.wavelength = ws
+        # self.wavelength = ws
         self.coef = F
-        return self
+        # return self
     
-    # this will be deprecated in the future
-    def fit_transform(self,fits_data:FitsData = None
-                    ,*
-                    ,wavelength:numpy.ndarray = None
-                    ,flux:numpy.ndarray = None):
+    def __call__(self
+                 ,fits_data:FitsData
+                 ,*
+                 , wavelength:numpy.ndarray)->numpy.ndarray:
         
-        self.fit(fits_data=fits_data
-                 ,wavelength=wavelength
-                 ,flux=flux)
-        
-        if wavelength is None:
-            return self.transform(self.wavelength)
-        else:
-            return self.transform(self.wavelength)
-    
 
-    def transform(self,wavelength:numpy.ndarray)->numpy.ndarray:
-        if self.coef is None:
-            raise ValueError("must fit before transform")
+        if wavelength is None and fits_data is None:
+            raise ValueError("must provide either `wavelength` or `fits_data`")
+        
+        if fits_data is not None and wavelength is not None:
+            raise ValueError("must provide either `wavelength` or `fits_data`")
+        s
+        
+        if fits_data is not None:
+            wavelength = numpy.asarray(fits_data.wavelength)
+        else:
+            wavelength = numpy.asarray(wavelength)
+        
         return numpy.polyval(self.coef,wavelength)
 
-        
 
 
 # FIXME: This function is not matched the article

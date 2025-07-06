@@ -13,32 +13,48 @@ from functools import wraps
 
 __all__ = ['download_fits']
 
+import asyncio
+from functools import wraps
+
+def asyncio_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        
+        if loop and loop.is_running():
+            # create_task() in the running loop
+            return loop.create_task(func(*args, **kwargs))
+        else:
+            # run_until_complete() outside the running loop
+            return asyncio.run(func(*args, **kwargs))
+    
+    return wrapper
+
 
 class FitsDownloader:
     def __init__(self,dr_number:int
                     ,*
                     ,TOKEN:str
                     ,is_med:bool
-                    ,sem_number:int = 5
-                    ,max_retrys:int = 3
-                    ,save_dir:str = None):
+                    ,sem_number:int
+                    ,max_retrys:int
+                    ,save_dir:str):
         
         self.dr_number = dr_number
         self.TOKEN = TOKEN
         self.is_med = is_med
         self.max_retrys = max_retrys
+        self.save_dir = save_dir
         self.sem = asyncio.Semaphore(sem_number)
+        self.band()
 
-
-        if save_dir is None:
-            self.save_dir = f"./dr{self.dr_number}"
-            Path(self.save_dir).mkdir(exist_ok=True)
-        else:
-            self.save_dir = save_dir
-            if save_dir=="./":
-                pass
-            else:
-                Path(self.save_dir).mkdir(exist_ok=True)
+    
+    def band(self):
+        self.task_completed = 0
+        self.task_total = 0
 
 
     def make_url(self,
@@ -72,23 +88,22 @@ class FitsDownloader:
                             fits_path = Path(self.save_dir).joinpath(fits_name)
                             async with aiofiles.open(fits_path,"wb+") as f:
                                 await f.write(await response.read())
-
-                            # print(f"{fits_name} has dowloaded")
-                            return fits_name
-                except (aiohttp.ClientError,asyncio.TimeoutError) as e:
-                    await asyncio.sleep(1 + 0.5 * retry)
-                
+                            
+                            self.task_completed += 1
+                            print(f"<{fits_name} has dowloaded,current progress:{self.task_completed}/{self.task_total}>")
+                            return
+                        
                 except Exception as e:
-                    raise e
-            raise aiohttp.http_exceptions.HttpProcessingError(code=500,message="Download failed") from e
+                    await asyncio.sleep(1 + 0.5 * retry)
+                    if retry == self.max_retrys - 1:
+                         raise aiohttp.http_exceptions.HttpProcessingError(code=500
+                                                                           ,message="Download failed") from e
+           
     
-    
+    @asyncio_decorator
     async def async_download_fits(self,
             obsid_list:list | int
-    ):
-        if isinstance(obsid_list,int):
-                obsid_list = [obsid_list]
-            
+    ):       
         tasks = []
         async with aiohttp.ClientSession() as session:
             for obsid in obsid_list:
@@ -96,7 +111,36 @@ class FitsDownloader:
                 task = self.download_single_fits(download_url=download_url
                                         ,session=session)
                 tasks.append(task)
+            self.task_total = len(tasks)
             
             for future in asyncio.as_completed(tasks):
-                fits_name = await future
-                yield fits_name
+                await future
+
+
+
+def download_fits(obsids_lists:list | int
+                  ,dr_number:int
+                  ,TOKEN:str = None
+                  ,is_med:bool = False
+                  ,sem_number:int = 5
+                  ,max_retrys:int = 3
+                  ,save_dir:str = None):
+    
+    if save_dir is None:
+        save_dir = f"./dr{dr_number}"
+        Path(save_dir).mkdir(exist_ok=True)
+    else:
+        save_dir = save_dir
+        if save_dir=="./":
+            pass
+        else:
+            Path(save_dir).mkdir(exist_ok=True)
+    
+    fits_downloader = FitsDownloader(dr_number=dr_number
+                                     ,TOKEN=TOKEN
+                                     ,is_med=is_med
+                                     ,sem_number=sem_number
+                                     ,max_retrys=max_retrys
+                                     ,save_dir=save_dir)
+    
+    fits_downloader.async_download_fits(obsid_list=obsids_lists)
