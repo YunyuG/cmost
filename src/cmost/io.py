@@ -9,7 +9,7 @@ import re
 import numpy
 
 from astropy.io import fits
-from .processing import minmax_function,align_wavelength,remove_redshift
+from .processing import minmax_function,align_wavelength,remove_redshift,median_filter
 
 class FitsData:
     def __init__(self,wavelength:numpy.ndarray
@@ -47,6 +47,10 @@ class FitsData:
                                     ,self.flux,Z)
         return self
     
+    def median_filter(self,size:int=7)->FitsData:
+        self.flux = median_filter(self.flux,size)
+        return self
+    
     def visualize(self,ax=None):
         if ax:
             plot_spectrum(self.wavelength,self.flux,ax,is_show=False)
@@ -57,11 +61,21 @@ class FitsData:
     def from_hdu(cls,hdu):
         header = Header.from_hdu(hdu)
         match = re.search(r'DR(\d{1,2})', header["data_v"])
-        dr_number = int(match.group(1))
+        dr_version = int(match.group(1))
 
-        data = hdu[0].data if dr_number<8 else hdu[1].data[0]
+        data = hdu[0].data if dr_version<8 else hdu[1].data[0]
 
-        wavelength = numpy.asarray(data[2],dtype=float)
+        if dr_version<8:
+            # This part refers to the `read_lrs_fits` function in the `LAMOST` class of the `pylamost`` library
+            # Specifically, see:
+            #   https://github.com/fandongwei/pylamost
+            coeff0 = header['coeff0']
+            coeff1 = header['coeff1']
+            pixel_num = header['naxis1']
+            wavelength = 10 ** (coeff0+numpy.arange(pixel_num)*coeff1)
+        else:
+            wavelength = numpy.asarray(data[2],dtype=float)
+
         flux = numpy.asarray(data[0],dtype=float)
         andmask = numpy.asarray(data[3],dtype=int)
         orimask = numpy.asarray(data[4],dtype=int)

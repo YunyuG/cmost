@@ -35,16 +35,20 @@ def asyncio_decorator(func):
 
 
 class FitsDownloader:
-    def __init__(self,dr_number:int
+    def __init__(self,dr_version:str
+                    ,sub_version:str
                     ,*
+                    ,is_dev:bool
                     ,TOKEN:str
                     ,is_med:bool
                     ,sem_number:int
                     ,max_retrys:int
                     ,save_dir:str):
         
-        self.dr_number = dr_number
-        self.TOKEN = TOKEN
+        self.dr_version = dr_version
+        self.sub_version = sub_version
+        self.is_dev = is_dev
+        self.TOKEN = TOKEN if TOKEN else ""
         self.is_med = is_med
         self.max_retrys = max_retrys
         self.save_dir = save_dir
@@ -55,39 +59,33 @@ class FitsDownloader:
     def band(self):
         self.task_completed = 0
         self.task_total = 0
-
-
-    def make_url(self,
-            obsid:int
-        )->str:
         """
         The construction of the download link refers to the official LAMOST tool `pylamost`.
             https://github.com/fandongwei/pylamost
 
         """
-        if self.dr_number >= 6:
-            root_url = f"https://www.lamost.org/dr{self.dr_number}/{'med' if self.is_med else ''}spectrum/fits"
-        else:
-            root_url = f"http://dr{self.dr_number}.lamost.org/{'med' if self.is_med else ''}spectrum/fits"
-
-        url = "{0}/{1}{2}".format(root_url,obsid,f"?token={self.TOKEN}" if self.TOKEN else "")
-        return url
-
+        resolution = 'mrs' if self.is_med else 'lrs'
+        base_url = 'https://www2.lamost.org/openapi' if self.is_dev else "https://www.lamost.org/openapi"
+        url = f"{base_url}/{self.dr_version}/{self.sub_version}/{resolution}/spectrum/fits"
+        self.url = url
     
 
     async def download_single_fits(self,
-            download_url:str
+            obsid:int
             ,session:aiohttp.ClientSession
         )->None:
             
             for retry in range(self.max_retrys):
                 try:
                     async with self.sem:
-                        async with session.get(download_url) as response:
+                        async with session.get(self.url,params={"obsid":obsid,"token":self.TOKEN}) as response:
                             fits_name = response.headers["Content-Disposition"].split("=")[1]
                             fits_path = Path(self.save_dir).joinpath(fits_name)
                             async with aiofiles.open(fits_path,"wb+") as f:
-                                await f.write(await response.read())
+                                # 8192 is the default chunk size
+                                async for chunk in response.content.iter_chunked(8192):
+                                    if chunk:
+                                        await f.write(chunk)
                             
                             self.task_completed += 1
                             print(f"<{fits_name} has dowloaded,current progress:{self.task_completed}/{self.task_total}>")
@@ -102,14 +100,14 @@ class FitsDownloader:
     
     @asyncio_decorator
     async def async_download_fits(self,
-            obsid_list:list | int
+            obsids_list:list[str]
     ):       
         tasks = []
         async with aiohttp.ClientSession() as session:
-            for obsid in obsid_list:
-                download_url = self.make_url(obsid)
-                task = self.download_single_fits(download_url=download_url
-                                        ,session=session)
+            for obsid in obsids_list:
+                obsid = str(obsid)
+                task = self.download_single_fits(obsid=obsid
+                                            ,session=session)
                 tasks.append(task)
             self.task_total = len(tasks)
             
@@ -118,16 +116,21 @@ class FitsDownloader:
 
 
 
-def download_fits(obsids_lists:list | int
-                  ,dr_number:int
+def download_fits(obsids_list:list[int]
+                  ,dr_version:int
+                  ,sub_version:int
+                  ,is_dev:bool = False
                   ,TOKEN:str = None
                   ,is_med:bool = False
                   ,sem_number:int = 5
                   ,max_retrys:int = 3
                   ,save_dir:str = None):
     
+    dr_version = f"dr{dr_version}" if "dr" not in dr_version else dr_version
+    sub_version = f"v{sub_version}" if "v" not in sub_version else sub_version
+    
     if save_dir is None:
-        save_dir = f"./dr{dr_number}"
+        save_dir = f"./{dr_version}_{sub_version}"
         Path(save_dir).mkdir(exist_ok=True)
     else:
         save_dir = save_dir
@@ -136,11 +139,13 @@ def download_fits(obsids_lists:list | int
         else:
             Path(save_dir).mkdir(exist_ok=True)
     
-    fits_downloader = FitsDownloader(dr_number=dr_number
+    fits_downloader = FitsDownloader(dr_version=dr_version
+                                     ,sub_version=sub_version
+                                     ,is_dev=is_dev
                                      ,TOKEN=TOKEN
                                      ,is_med=is_med
                                      ,sem_number=sem_number
                                      ,max_retrys=max_retrys
                                      ,save_dir=save_dir)
     
-    fits_downloader.async_download_fits(obsid_list=obsids_lists)
+    fits_downloader.async_download_fits(obsids_list=obsids_list)

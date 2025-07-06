@@ -38,3 +38,17 @@ print(data.flux) # flux
 
 data.visualize() # Plot the spectrum
 ```
+
+if you want to download LAMOST FITS files from the official FTP server, you can use the `download_fits` function:
+```python
+import cmost as cst
+
+obsids_list = [101001, 101002, 101005]
+cst.download_fits(obsids_list=obsids_list
+                    ,dr_version="9"
+                    ,sub_version="2.0" # notice :`.0` is required
+                    ,save_dir='./dr9_v2.0'
+                    ,TOKEN="******")
+```
+
+

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import numpy
-from scipy import interpolate
+from scipy import interpolate, signal
         
 def minmax_function(flux,range_:tuple)->numpy.ndarray:
     flux = range_[0] + (range_[1] - range_[0]) * (flux - numpy.min(flux)) \
@@ -33,3 +33,6 @@ def remove_redshift(wavelength_obs:numpy.ndarray
     F = interpolate.interp1d(wavelength_rest,flux_rest,kind=kind
                         ,bounds_error=False,fill_value=(flux_rest[0],flux_rest[-1]))
     return F(wavelength_obs)
+
+def median_filter(flux:numpy.ndarray,size:int)->numpy.ndarray:
+    return signal.medfilt(flux,size)
