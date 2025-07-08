@@ -16,14 +16,5 @@ class Test_download(unittest.TestCase):
                             ,save_dir='./tests'
                             ,TOKEN="Fb925bed8c2")
             
-    # def test_download_MidFits_file(self):
-    #     obsids_list = [588902005,588902003]
-    #     cst.download_fits(obsids_list=obsids_list
-    #                       ,dr_version=13
-    #                       ,sub_version=0
-    #                       ,save_dir='./tests'
-    #                       ,TOKEN="Fb925bed8c2"
-    #                       ,is_med=True)
-            
 if __name__ == '__main__':
     unittest.main()

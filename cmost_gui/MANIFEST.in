@@ -1,0 +1,3 @@
+include src/cmost_gui/assets/*.jpg
+include src/cmost_gui/assets/*.png
+include src/cmost_gui/assets/index.table
