@@ -88,20 +88,19 @@ def content(u:UserInputInfo)->None:
             fits_data.align(u.aligned_wavelength)
 
         if u.fitting:
-            model = cst.fitting.SwFitting5d()
-            model.fit(fits_data)
-            flux_fitting = model.transform(fits_data.wavelength)
+            model = cst.fitting.SwFitting5d(fits_data)
+            flux_fitting = model(fits_data)
         
         col1,col2 = st.columns([1,1])
         col3,col4 = st.columns([1,1])
         with col1:
-            st.metric(label="OBSID",value=fits_data["OBSID"],border=True)
+            st.metric(label="OBSID",value=fits_data["obsid"],border=True)
         with col2:
-            st.metric(label="VERSION",value=fits_data["DATA_V"],border=True)
+            st.metric(label="VERSION",value=fits_data["data_v"],border=True)
         with col3:
-            st.metric(label="class",value=fits_data["CLASS"],border=True)
+            st.metric(label="class",value=fits_data["class"],border=True)
         with col4:
-            st.metric(label="subclass",value=fits_data["SUBCLASS"],border=True)
+            st.metric(label="subclass",value=fits_data["subclass"],border=True)
         
         data = pd.DataFrame(
             data={

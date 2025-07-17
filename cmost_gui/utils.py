@@ -21,9 +21,9 @@ def read_fits_single(fits_path:str
     if align_wavelength is not None:
         fits_data.align(aligned_wavelength=align_wavelength)
     if fitting:
-        model = cst.fitting.SwFitting5d()
-        model.fit(fits_data)
-        fits_data.flux = model.transform(fits_data.wavelength)
+        model = cst.fitting.SwFitting5d(fits_data=fits_data)
+        # model.fit(fits_data)
+        fits_data.flux = model(fits_data)
         # print(fits_data.flux)
     return fits_data
 

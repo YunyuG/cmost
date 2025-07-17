@@ -1,6 +1,6 @@
 from dataclasses import dataclass,field
 import streamlit as st
-import asyncio
+import pandas as pd
 import cmost as cst
 from pathlib import Path
 from utils import clean_cache
@@ -9,7 +9,8 @@ clean_cache()
 
 @dataclass
 class UserSubmitInfo:
-    dr_number: str
+    dr_version: str
+    sub_version:str
     TOKEN: str
     obsid_list:list = field(repr=False)
     is_med:bool
@@ -20,11 +21,12 @@ class UserSubmitInfo:
 
 
 def start_download(u:UserSubmitInfo):
-    dr_number: str = u.dr_number
+    dr_version: str = str(u.dr_version)
     TOKEN: str = u.TOKEN
     obsid_list:list = u.obsid_list
     is_med:bool = u.is_med
     save_dir:str = u.save_dir
+    sub_version:str = u.sub_version
 
     if isinstance(obsid_list,int):
         obsid_list = [obsid_list]
@@ -36,12 +38,15 @@ def start_download(u:UserSubmitInfo):
         pass
     else:
         Path(save_dir).mkdir(exist_ok=True)
-    
-    cst.download_fits(obsids_list=obsid_list
-                        ,dr_number=dr_number
-                        ,TOKEN=TOKEN
-                        ,is_med=is_med
-                        ,save_dir=save_dir)
+    with st.spinner("Downloading..."):
+        cst.download_fits(obsids_list=obsid_list
+                            ,dr_version=dr_version
+                            ,sub_version=sub_version
+                            ,TOKEN=TOKEN
+                            ,is_med=is_med
+                            ,save_dir=save_dir)
+    st.success("Download completed!")
+    st.balloons()
 
     
     # with st.spinner("Downloading..."):
@@ -64,7 +69,8 @@ with c2:
 
 with st.form("my_form"):
     u = UserSubmitInfo(
-        dr_number=st.number_input("please input dr number：",value=13,min_value=1,max_value=13)
+        dr_version=st.number_input("please input dr number：",value=13,min_value=1,max_value=13)
+        ,sub_version = st.text_input("please input subversion：",value="2.0")
         ,TOKEN=st.text_input("*if datasets of this version are not open, please input token：",value=None)
         ,obsid_list=st.text_area("please input obsid",value=None)
         ,is_med=st.toggle("If you need to download files of medium-resolution spectra, please turn on this switch.")
@@ -77,7 +83,7 @@ with st.form("my_form"):
             if u.obsid_list is None:
                 st.error("obsid_list should not be None")
                 st.stop()
-            if u.dr_number is None:
+            if u.dr_version is None:
                 st.error("dr_number should not be None")
                 st.stop()
             start_download(u)
@@ -85,3 +91,5 @@ with st.form("my_form"):
             st.error("It is possible that the parameters you entered are incorrect, or the dataset of this version is not open." \
             " Please try entering the TOKEN or check your network and parameters.")
             st.exception(e)
+obsid_example=pd.read_csv(str(Path(__file__).parent/"assets/example_obsid.txt")).to_csv(index=False)
+st.download_button("example_obsid",data=obsid_example,file_name="example_obsid.txt",mime="text/csv")

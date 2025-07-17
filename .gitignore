@@ -30,3 +30,6 @@ dmypy.json
 
 /tests/cache
 /scripts/
+
+# fits.gz
+*.fits.gz

@@ -38,6 +38,8 @@ class SwFitting5d:
         self.mean_filter_size = mean_filter_size
         self.c = c
         self.max_iterate_nums = max_iterate_nums
+
+        self.band()
     
     
     def band(self):
@@ -84,7 +86,7 @@ class SwFitting5d:
     def __call__(self
                  ,fits_data:FitsData
                  ,*
-                 , wavelength:numpy.ndarray)->numpy.ndarray:
+                 , wavelength:numpy.ndarray = None)->numpy.ndarray:
         
 
         if wavelength is None and fits_data is None:
@@ -92,7 +94,6 @@ class SwFitting5d:
         
         if fits_data is not None and wavelength is not None:
             raise ValueError("must provide either `wavelength` or `fits_data`")
-        s
         
         if fits_data is not None:
             wavelength = numpy.asarray(fits_data.wavelength)
