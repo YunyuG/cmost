@@ -13,9 +13,6 @@ from functools import wraps
 
 __all__ = ['download_fits']
 
-import asyncio
-from functools import wraps
-
 def asyncio_decorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
