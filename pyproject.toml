@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cmost"
-version = "0.2"
+version = "0.1"
 authors = [
     {name = "Yunyu Guo",email="guoyunyu2017@outlook.com"}
-    ,{name = "Peng Tang",email="1941275544@qq.com"}]
+    ,{name = "Peng Tang",email="1941275544@qq.com"}
+    ,{name = "Qi Li",email="2119251347@qq.com"}]
 description = "A processing tool for FITS files related to LAMOST"
 license = "GPL-3.0-or-later"
 license-files = ["LICENCE"]
