@@ -152,7 +152,7 @@ def compute_mean_flux(
 )->tuple[float]:
     lambda_1 = numpy.min(wavelength)
     lambda_2 = numpy.max(wavelength)
-    mean_flux = integrate.trapezoid(flux,wavelength / (lambda_2 - lambda_1))
+    mean_flux = integrate.trapezoid(flux,wavelength) / (lambda_2 - lambda_1)
     return mean_flux
 
     
